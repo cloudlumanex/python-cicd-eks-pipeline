@@ -124,3 +124,4 @@ eksctl delete cluster --name devops-project-cluster --region eu-west-1
 
 This project is for educational and demonstration purposes.
 # Retrying with fixed AWS credentials
+
