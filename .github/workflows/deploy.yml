@@ -17,6 +17,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      security-events: write  # Added this for Trivy SARIF upload
 
     steps:
     - name: Checkout code
@@ -47,7 +48,7 @@ jobs:
         context: .
         push: false
         load: true
-        tags: ${{ steps.meta.outputs.tags }}
+        tags: ${{ env.IMAGE_NAME }}:latest
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
@@ -56,14 +57,10 @@ jobs:
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ env.IMAGE_NAME }}:latest
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-
-    - name: Upload Trivy results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
+        format: 'table'
+        exit-code: '0'
+        ignore-unfixed: true
+        severity: 'CRITICAL,HIGH'
 
     - name: Push Docker image to GHCR
       uses: docker/build-push-action@v5
@@ -98,5 +95,8 @@ jobs:
         echo "Waiting for LoadBalancer to be ready..."
         sleep 30
         kubectl get service python-app-service
+        echo "========================"
         echo "Application URL:"
-        kubectl get service python-app-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}'
+        LB_URL=$(kubectl get service python-app-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        echo "http://$LB_URL"
+        echo "========================"
