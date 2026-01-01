@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps Demo Application</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 DevOps CI/CD Demo</h1>
+            <p>Python Flask App deployed on AWS EKS via GitHub Actions</p>
+        </header>
+
+        <div class="card-grid">
+            <div class="card" id="health-card">
+                <h2>Health Status</h2>
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="health-status">Checking...</span>
+                </div>
+                <p id="health-details"></p>
+            </div>
+
+            <div class="card" id="version-card">
+                <h2>Version Info</h2>
+                <p id="version-info">Loading...</p>
+            </div>
+
+            <div class="card" id="system-card">
+                <h2>System Information</h2>
+                <div id="system-info">Loading...</div>
+            </div>
+
+            <div class="card" id="pipeline-card">
+                <h2>Pipeline Details</h2>
+                <ul>
+                    <li>✅ Build Docker Image</li>
+                    <li>✅ Security Scan (Trivy)</li>
+                    <li>✅ Push to GHCR</li>
+                    <li>✅ Deploy to EKS</li>
+                </ul>
+            </div>
+        </div>
+
+        <footer>
+            <p>Deployed with ❤️ using GitHub Actions | Last updated: <span id="timestamp"></span></p>
+        </footer>
+    </div>
+
+    <script>
+        async function fetchHealth() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                document.getElementById('health-status').textContent = data.status.toUpperCase();
+                document.getElementById('health-details').innerHTML = `
+                    <strong>Hostname:</strong> ${data.hostname}<br>
+                    <strong>Environment:</strong> ${data.environment}
+                `;
+                
+                if (data.status === 'ok') {
+                    document.querySelector('.status-dot').classList.add('active');
+                }
+            } catch (error) {
+                document.getElementById('health-status').textContent = 'ERROR';
+            }
+        }
+
+        async function fetchVersion() {
+            try {
+                const response = await fetch('/api/version');
+                const data = await response.json();
+                document.getElementById('version-info').innerHTML = `
+                    <strong>Version:</strong> ${data.version}<br>
+                    <strong>Build:</strong> ${data.build}
+                `;
+            } catch (error) {
+                document.getElementById('version-info').textContent = 'Unable to fetch version';
+            }
+        }
+
+        async function fetchSystemInfo() {
+            try {
+                const response = await fetch('/api/info');
+                const data = await response.json();
+                document.getElementById('system-info').innerHTML = `
+                    <p><strong>Platform:</strong> ${data.platform}</p>
+                    <p><strong>Region:</strong> ${data.region}</p>
+                    <p><strong>Deployed by:</strong> ${data.deployed_by}</p>
+                    <p><strong>Registry:</strong> ${data.container_registry}</p>
+                `;
+            } catch (error) {
+                document.getElementById('system-info').textContent = 'Unable to fetch system info';
+            }
+        }
+
+        function updateTimestamp() {
+            const now = new Date();
+            document.getElementById('timestamp').textContent = now.toLocaleString();
+        }
+
+        fetchHealth();
+        fetchVersion();
+        fetchSystemInfo();
+        updateTimestamp();
+
+        setInterval(() => {
+            fetchHealth();
+            fetchVersion();
+            fetchSystemInfo();
+            updateTimestamp();
+        }, 30000);
+    </script>
+</body>
+</html>
